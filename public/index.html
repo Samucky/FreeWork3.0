@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FreeWork - Freelancers</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="#" class="text-2xl font-semibold text-blue-600">FreeWork</a>
+            <div class="flex space-x-4">
+                <a href="#" class="text-gray-600 hover:text-blue-600 transition-colors">Inicio</a>
+                <a href="#" class="text-gray-600 hover:text-blue-600 transition-colors">Configuraciones</a>
+                <a href="#" class="text-gray-600 hover:text-blue-600 transition-colors">Aspirantes</a>
+                <a href="#" class="text-gray-600 hover:text-blue-600 transition-colors">Crear proyecto</a>
+            </div>
+            <div>
+                <button class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">Cerrar Sesión</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <main class="container mx-auto px-4 py-8">
+        <section class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">Lista de Freelancers</h1>
+        </section>
+
+        <!-- Contenedor Dinámico para los Freelancers -->
+        <section id="freelancer-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></section>
+
+        <!-- Paginación -->
+        <div id="pagination" class="flex justify-center items-center space-x-2 mt-6">
+            <button id="prev-page" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition" disabled>
+                Anterior
+            </button>
+            <span id="current-page" class="text-gray-700 font-medium">1</span>
+            <button id="next-page" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                Siguiente
+            </button>
+        </div>
+    </main>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+    const apiUrl = "http://localhost:3000/api/freelancers";
+    const itemsPerPage = 13;
+
+    try {
+        // Verificar si ya hay datos en localStorage
+        let data = localStorage.getItem("freelancers");
+        if (data && data !== "undefined") {
+            console.log("Datos encontrados en localStorage.");
+            data = JSON.parse(data);
+            renderPage(1, data, itemsPerPage); // Renderizar la primera página
+        } else {
+            console.log("No se encontraron datos en localStorage. Obteniendo datos de la API...");
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Error en la API: ${response.status} ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Datos obtenidos de la API:", data);
+                    localStorage.setItem("freelancers", JSON.stringify(data));
+                    renderPage(1, data, itemsPerPage); // Renderizar la primera página
+                })
+                .catch(error => {
+                    console.error("Error al obtener datos de la API:", error);
+                });
+        }
+    } catch (error) {
+        console.error("Error general en la aplicación:", error);
+    }
+});
+
+function renderPage(page, data, itemsPerPage) {
+    try {
+        const container = document.getElementById("freelancer-container");
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const currentItems = data.slice(startIndex, endIndex);
+
+        container.innerHTML = ""; // Limpiar el contenedor antes de insertar nuevas tarjetas
+
+        // Generar tarjetas de freelancers
+        currentItems.forEach(freelancer => {
+            const card = `
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h2 class="text-xl font-bold text-gray-800">${freelancer.nombre}</h2>
+                    <p class="text-gray-600">Especialidad: ${freelancer.especialidad}</p>
+                    <p class="text-gray-600">Email: ${freelancer.email}</p>
+                    <p class="text-gray-600">Teléfono: ${freelancer.telefono}</p>
+                </div>
+            `;
+            container.innerHTML += card;
+        });
+
+        console.log(`Página ${page} renderizada con ${currentItems.length} elementos.`);
+        updatePagination(page, data.length, itemsPerPage);
+    } catch (error) {
+        console.error("Error al renderizar la página:", error);
+    }
+}
+
+function updatePagination(currentPage, totalItems, itemsPerPage) {
+    try {
+        const prevButton = document.getElementById("prev-page");
+        const nextButton = document.getElementById("next-page");
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+        document.getElementById("current-page").innerText = currentPage;
+
+        prevButton.disabled = currentPage === 1;
+        nextButton.disabled = currentPage === totalPages;
+
+        prevButton.onclick = () => {
+            if (currentPage > 1) {
+                console.log("Cargando página anterior...");
+                renderPage(currentPage - 1, JSON.parse(localStorage.getItem("freelancers")), itemsPerPage);
+            }
+        };
+
+        nextButton.onclick = () => {
+            if (currentPage < totalPages) {
+                console.log("Cargando página siguiente...");
+                renderPage(currentPage + 1, JSON.parse(localStorage.getItem("freelancers")), itemsPerPage);
+            }
+        };
+    } catch (error) {
+        console.error("Error al actualizar la paginación:", error);
+    }
+}
+
+    </script>
+
+
+</body>
+</html>
