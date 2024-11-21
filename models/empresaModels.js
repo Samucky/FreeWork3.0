@@ -1,10 +1,10 @@
 class Empresa {
-    constructor(id, nombre, direccion, telefono, email) {
-        this.id = id;
-        this.nombre = nombre;
-        this.direccion = direccion;
-        this.telefono = telefono;
-        this.email = email;
+    constructor(EmpresaID, Nombre, Direccion, Telefono, Email) {
+        this.EmpresaID = EmpresaID;
+        this.Nombre = Nombre;
+        this.Direccion = Direccion;
+        this.Telefono = Telefono;
+        this.Email = Email;
     }
 }
 

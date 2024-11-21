@@ -1,17 +1,25 @@
 import express from "express";
 import { check, validationResult } from 'express-validator';
 import empresaService from "../services/empresaServices.js";
+import { query } from '../db.js';
+import Empresa from '../models/empresaModels.js';
 
 const router = express.Router();
 
+
+
 router.get("/empresas", async (req, res) => {
     try {
-        const empresas = await empresaService.getAllEmpresas();
+        // Consulta SQL directa para obtener todas las empresas
+        const sqlQuery = "SELECT * FROM Empresas"; // Ajusta el nombre de la tabla según tu esquema
+        const empresas = await query(sqlQuery);
+        
         res.json(empresas);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
+
 
 router.post("/empresas", 
     [

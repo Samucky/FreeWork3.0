@@ -1,6 +1,8 @@
 import express from "express";
 import { check, validationResult } from "express-validator";
 import freelancerService from "../services/freelancerServices.js";
+import { query } from '../db.js';
+
 
 const router = express.Router();
 
@@ -13,7 +15,31 @@ router.get("/freelancers", async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+router.get('/freelancers/:page', async (req, res) => {
+    const { page } = req.params;
 
+    const pageNumber = parseInt(page, 10);
+    if (isNaN(pageNumber) || pageNumber < 1) {
+        return res.status(400).send('Número de página inválido');
+    }
+
+    const limit = 50;  
+    const offset = (pageNumber - 1) * limit; 
+
+    console.log('Limit:', limit);
+    console.log('Offset:', offset);
+
+    try {
+        const freelancers = await query(
+            `SELECT * FROM Freelancers ORDER BY FreelancerID LIMIT ${limit} OFFSET ${offset}`
+        );
+
+        res.json(freelancers);
+    } catch (error) {
+        console.error('Error al obtener freelancers:', error);
+        res.status(500).send('Error al obtener freelancers');
+    }
+});
 
 // Ruta para crear un nuevo freelancer
 router.post(
