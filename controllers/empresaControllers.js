@@ -7,7 +7,31 @@ import Empresa from '../models/empresaModels.js';
 const router = express.Router();
 
 
+router.get('/empresas/:page', async (req, res) => {
+    const { page } = req.params;
 
+    const pageNumber = parseInt(page, 10);
+    if (isNaN(pageNumber) || pageNumber < 1) {
+        return res.status(400).send('Número de página inválido');
+    }
+
+    const limit = 50;  
+    const offset = (pageNumber - 1) * limit; 
+
+    console.log('Limit:', limit);
+    console.log('Offset:', offset);
+
+    try {
+        const freelancers = await query(
+            `SELECT * FROM Empresas ORDER BY EmpresaID LIMIT ${limit} OFFSET ${offset}`
+        );
+
+        res.json(freelancers);
+    } catch (error) {
+        console.error('Error al obtener freelancers:', error);
+        res.status(500).send('Error al obtener freelancers');
+    }
+});
 router.get("/empresas", async (req, res) => {
     try {
         // Consulta SQL directa para obtener todas las empresas
