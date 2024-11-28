@@ -1,37 +1,9 @@
 import express from "express";
 import { check, validationResult } from 'express-validator';
-import empresaService from "../services/empresaServices.js";
 import { query } from '../db.js';
-import Empresa from '../models/empresaModels.js';
 
 const router = express.Router();
 
-
-router.get('/empresas/:page', async (req, res) => {
-    const { page } = req.params;
-
-    const pageNumber = parseInt(page, 10);
-    if (isNaN(pageNumber) || pageNumber < 1) {
-        return res.status(400).send('Número de página inválido');
-    }
-
-    const limit = 50;  
-    const offset = (pageNumber - 1) * limit; 
-
-    console.log('Limit:', limit);
-    console.log('Offset:', offset);
-
-    try {
-        const freelancers = await query(
-            `SELECT * FROM Empresas ORDER BY EmpresaID LIMIT ${limit} OFFSET ${offset}`
-        );
-
-        res.json(freelancers);
-    } catch (error) {
-        console.error('Error al obtener freelancers:', error);
-        res.status(500).send('Error al obtener freelancers');
-    }
-});
 router.get("/empresas", async (req, res) => {
     try {
         // Consulta SQL directa para obtener todas las empresas
@@ -50,19 +22,29 @@ router.post("/empresas",
         check('nombre').not().isEmpty().withMessage('El nombre es requerido'),
         check('direccion').not().isEmpty().withMessage('La dirección es requerida'),
         check('telefono').not().isEmpty().withMessage('El teléfono es requerido'),
-        check('email').isEmail().withMessage('El email es inválido')
-    ],
-    async (req, res) => {
+        check('email').isEmail().withMessage('El email es inválido'),
+        check('passwordE').not().isEmpty().withMessage('El password es requerido'),
+        check('AdrressIp').optional().isIP().withMessage('La IP no es válida') // IP es opcional, pero validada si se proporciona
+    ], 
+    async (req, res) => { 
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
 
         try {
-            const { nombre, direccion, telefono, email } = req.body;
-            const newEmpresa = new Empresa(null, nombre, direccion, telefono, email);
-            await empresaService.saveEmpresa(newEmpresa);
+            const { nombre, direccion, telefono, email, passwordE, AdrressIp } = req.body;
 
+            // Definir la consulta SQL para insertar
+            const insertQuery = `
+                INSERT INTO Empresas (Nombre, Direccion, Telefono, Email, passwordE, AdrressIp)
+                VALUES (?, ?, ?, ?, ?, ?);
+            `;
+
+            // Ejecutar la consulta con los valores recibidos
+            await query(insertQuery, [nombre, direccion, telefono, email, passwordE, AdrressIp]);
+
+            // Respuesta exitosa
             res.status(201).json({ message: 'Empresa creada exitosamente' });
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -72,21 +54,62 @@ router.post("/empresas",
 
 
 router.put("/empresas/:id", async (req, res) => {
+    const { nombre, direccion, telefono, email, passwordE, AdrressIp } = req.body;
+    const empresaID = req.params.id;
+  
+    // Consulta SQL para actualizar la empresa
+    const queryText = `
+      UPDATE Empresas 
+      SET 
+        Nombre = ?, 
+        Direccion = ?, 
+        Telefono = ?, 
+        Email = ?, 
+        passwordE = ?, 
+        AdrressIp = ? 
+      WHERE EmpresaID = ?;
+    `;
+  
     try {
-        const updatedEmpresa = await empresaService.updateEmpresa(req.params.id, req.body);
-        res.json(updatedEmpresa);
+      const result = await query(queryText, [nombre, direccion, telefono, email, passwordE, AdrressIp, empresaID]);
+  
+      if (result.affectedRows > 0) {
+        res.json({ message: 'Empresa actualizada exitosamente' });
+      } else {
+        res.status(404).json({ error: 'Empresa no encontrada' });
+      }
     } catch (error) {
-        res.status(404).json({ error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+
+  router.delete("/empresas/:id", async (req, res) => {
+    const empresaID = req.params.id;
+
+    // Consulta SQL para eliminar la empresa
+    const sqlDeleteQuery = `
+        DELETE FROM Empresas 
+        WHERE EmpresaID = ?;
+    `;
+
+    try {
+        // Ejecutar la consulta
+        const result = await query(sqlDeleteQuery, [empresaID]);
+
+        // Verificar si se eliminó alguna fila
+        if (result.affectedRows > 0) {
+            // Si la empresa fue eliminada, retornamos un estado 200 (OK)
+            res.status(200).json({ message: 'Empresa eliminada exitosamente' });
+        } else {
+            // Si no se encontró la empresa, retornamos un estado 404 (No encontrado)
+            res.status(404).json({ error: 'Empresa no encontrada' });
+        }
+    } catch (error) {
+        // En caso de error en la consulta, retornamos un estado 500 (Error del servidor)
+        res.status(500).json({ error: error.message });
     }
 });
 
-router.delete("/empresas/:id", async (req, res) => {
-    try {
-        const result = await empresaService.deleteEmpresa(req.params.id);
-        res.json(result);
-    } catch (error) {
-        res.status(404).json({ error: error.message });
-    }
-});
-
+  
 export default router;

@@ -47,26 +47,43 @@ router.post(
     [
         check("nombre").not().isEmpty().withMessage("El nombre es requerido"),
         check("email").isEmail().withMessage("El email es inválido"),
-        check("habilidades").isArray().withMessage("Las habilidades deben ser un array"),
         check("telefono").not().isEmpty().withMessage("El teléfono es requerido"),
+        check("especialidad").not().isEmpty().withMessage("La especialidad es requerida"),
     ],
     async (req, res) => {
+        // Validar los campos recibidos
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
 
         try {
-            const { nombre, email, habilidades, telefono } = req.body;
-            const newFreelancer = { nombre, email, habilidades, telefono };
-            await freelancerService.saveFreelancer(newFreelancer);
+            const { id } = req.params;  // Obtener el ID del freelancer desde los parámetros de la URL
+            const { nombre, email, telefono, especialidad } = req.body;  // Obtener los datos de la solicitud
 
-            res.status(201).json({ message: "Freelancer creado exitosamente" });
+            // Consulta SQL para actualizar al freelancer
+            const sqlQuery = `
+                Insert into Freelancers
+                SET Nombre = ?, Email = ?, Telefono = ?, Especialidad = ?
+                WHERE FreelancerID = ?;
+            `;
+
+            // Ejecutar la consulta
+            const result = await query(sqlQuery, [nombre, email, telefono, especialidad, id]);
+
+            // Verificar si la actualización fue exitosa
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: "Freelancer no encontrado o no actualizado" });
+            }
+
+            res.status(200).json({ message: "Freelancer actualizado exitosamente" });
         } catch (error) {
+            console.error("Error al actualizar freelancer:", error);
             res.status(500).json({ error: error.message });
         }
     }
 );
+
 
 
 
