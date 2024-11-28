@@ -15,6 +15,50 @@ router.get("/empresas", async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+router.post(
+    "/login",
+    [
+        check("email").isEmail().withMessage("El email es inválido"),
+        check("passwordE").not().isEmpty().withMessage("La contraseña es requerida"),
+    ],
+    async (req, res) => {
+        // Validar los datos de entrada
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { email, passwordE } = req.body;
+
+        try {
+            // Consulta SQL para verificar las credenciales
+            const loginQuery = `
+                SELECT * 
+                FROM Empresas 
+                WHERE Email = ? AND passwordE = ?;
+            `;
+
+            // Ejecutar la consulta
+            const [user] = await query(loginQuery, [email, passwordE]);
+
+            if (!user) {
+                return res.status(401).json({ error: "Credenciales incorrectas" });
+            }
+
+            // Respuesta exitosa con la información del usuario
+            res.status(200).json({
+                message: "Inicio de sesión exitoso",
+                user: {
+                    id: user.IdEmpresa,
+                    nombre: user.Nombre,
+                    email: user.Email,
+                },
+            });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+);
 
 
 router.post("/empresas", 
