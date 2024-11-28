@@ -49,7 +49,7 @@ router.post(
             res.status(200).json({
                 message: "Inicio de sesión exitoso",
                 user: {
-                    id: user.IdEmpresa,
+                    id: user.EmpresaID,
                     nombre: user.Nombre,
                     email: user.Email,
                 },
