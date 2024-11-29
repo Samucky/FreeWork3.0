@@ -11,21 +11,14 @@ router.get("/contratos/:empresaId", async (req, res) => {
         // Obtener el parametro empresaId desde la URL
         const { empresaId } = req.params;
 
-        // Consulta SQL para obtener los contratos de la empresa por EmpresaID
+        // Consulta SQL para obtener los contratos filtrados por EmpresaID
         const sqlQuery = `
-            SELECT 
-                c.ContratoID,
-                c.FechaInicio,
-                c.FechaFin,
-                c.Monto,
-                c.Descripcion,
-                c.Estado,
-                c.FreelancerID
-            FROM Contratos c
-            WHERE c.EmpresaID = ?
+            SELECT *
+            FROM Contratos
+            WHERE EmpresaID = ?
         `;
 
-        // Ejecutar la consulta para obtener los contratos de la empresa
+        // Ejecutar la consulta para obtener los contratos
         const contratos = await query(sqlQuery, [empresaId]);
 
         // Verificar si se encontraron contratos
@@ -33,44 +26,15 @@ router.get("/contratos/:empresaId", async (req, res) => {
             return res.status(404).json({ message: "No se encontraron contratos para esta empresa." });
         }
 
-        // Array para almacenar los contratos con la información del freelancer
-        const contratosConFreelancer = [];
-
-        // Iterar sobre los contratos para obtener la información del freelancer
-        for (const contrato of contratos) {
-            // Consulta SQL para obtener la información del freelancer
-            const freelancerQuery = `
-                SELECT 
-                    f.FreelancerID,
-                    f.Nombre,
-                    f.Apellido,
-                    f.Email,
-                    f.Telefono
-                FROM Freelancers f
-                WHERE f.FreelancerID = ?
-            `;
-
-            // Ejecutar la consulta para obtener el freelancer por FreelancerID
-            const freelancer = await query(freelancerQuery, [contrato.FreelancerID]);
-
-            // Verificar si se encontró el freelancer
-            if (freelancer.length > 0) {
-                // Añadir el freelancer al contrato
-                contrato.Freelancer = freelancer[0]; // Asumimos que solo habrá un freelancer con ese ID
-            }
-
-            // Añadir el contrato con la información del freelancer al array
-            contratosConFreelancer.push(contrato);
-        }
-
-        // Responder con los contratos y la información del freelancer
-        res.json(contratosConFreelancer);
+        // Responder con los contratos filtrados por EmpresaID
+        res.json(contratos);
     } catch (error) {
         // Manejo de errores
         console.error(error);
         res.status(500).json({ error: error.message });
     }
 });
+
 router.post(
     "/contratos",
     [
