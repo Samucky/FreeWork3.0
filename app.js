@@ -4,6 +4,7 @@ import { query, closeConnection } from './db.js'; // Importación del módulo de
 import empresaController from './controllers/empresaControllers.js';
 import freelancer from './controllers/freelancerControllers.js'
 import proyectos from './controllers/proyectosControllers.js'
+import contratos from './controllers/contratosControllers.js'
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -23,6 +24,8 @@ app.get('/', (req, res) => {
 app.use('/api', proyectos);
 app.use('/api', freelancer);
 app.use('/api', empresaController);
+app.use('/api', contratos);
+
 
 
 

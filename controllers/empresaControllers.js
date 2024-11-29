@@ -15,6 +15,27 @@ router.get("/empresas", async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+router.get("/empresas/:id", async (req, res) => {
+    try {
+        // Obtener el parametro id de la URL
+        const empresaId = req.params.id;
+
+        // Consulta SQL para obtener la empresa por EmpresaID
+        const sqlQuery = "SELECT * FROM Empresas WHERE EmpresaID = ?"; // Ajusta según el nombre de la tabla y columna
+        const empresas = await query(sqlQuery, [empresaId]); // Usar parámetro para prevenir inyección SQL
+
+        // Verificar si se encontró la empresa
+        if (empresas.length === 0) {
+            return res.status(404).json({ message: "Empresa no encontrada" });
+        }
+
+        // Devolver los datos de la empresa
+        res.json(empresas[0]); // Si es una única empresa, devuelves el primer resultado
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.post(
     "/login",
     [
